@@ -5,7 +5,7 @@
  */
 import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-2.0-flash';
+const MODEL = 'gemini-2.5-flash';
 
 /**
  * Analyze a URL and score all criteria in a template using Gemini AI.
