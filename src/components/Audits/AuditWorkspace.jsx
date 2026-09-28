@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { calculateAuditScores } from '../../data/scoringEngine';
 import CriterionCard from './CriterionCard';
 import FindingsDrawer from './FindingsDrawer';
+import AIAnalysisModal from './AIAnalysisModal';
 import UrlAnalyzerModal from './UrlAnalyzerModal';
 import { 
   ArrowLeft, 
@@ -45,6 +46,7 @@ export default function AuditWorkspace() {
   const [filterCriteria, setFilterCriteria] = useState('ALL'); // ALL, UNSCORED, SCORED, LOW_SCORE, HIGH_PRIORITY
   const [isFindingsOpen, setIsFindingsOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isAIAnalysisOpen, setIsAIAnalysisOpen] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   // Audit Timer State (Tracks duration and audit speed)
@@ -190,6 +192,16 @@ export default function AuditWorkspace() {
     showToast(`Applied ${findings.length} findings from automated URL scan.`);
   };
 
+  // Handle AI analysis results — bulk apply all criterion scores at once
+  const handleApplyAIResults = (responses) => {
+    let count = 0;
+    Object.entries(responses).forEach(([critId, data]) => {
+      saveCriterionResponse(activeAudit.id, critId, data);
+      count++;
+    });
+    showToast(`✨ AI analysis applied — ${count} criteria scored automatically!`);
+  };
+
   // Format Elapsed Time (e.g. 03:45)
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -237,6 +249,23 @@ export default function AuditWorkspace() {
             <span style={{ color: 'var(--primary-light)' }}>Est. left: <strong>{estimateRemainingTime()}</strong></span>
           </div>
 
+          {/* 🤖 AI Auto-Analyse Button — Primary CTA */}
+          <button
+            className="btn btn-sm"
+            onClick={() => setIsAIAnalysisOpen(true)}
+            title="AI reads and scores the entire page automatically"
+            style={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              color: 'white',
+              border: 'none',
+              boxShadow: '0 3px 12px rgba(99,102,241,0.4)',
+              fontWeight: 700
+            }}
+          >
+            <Sparkles size={14} />
+            <span>✨ AI Auto-Analyse</span>
+          </button>
+
           {/* ⚡ Fast Audit Button */}
           <button 
             className="btn btn-secondary btn-sm"
@@ -245,7 +274,7 @@ export default function AuditWorkspace() {
             style={{ color: 'var(--primary-light)', borderColor: 'rgba(99, 102, 241, 0.4)' }}
           >
             <FastForward size={14} />
-            <span>⚡ AI Quick-Start</span>
+            <span>⚡ Quick-Start</span>
           </button>
 
           <button 
@@ -538,6 +567,14 @@ export default function AuditWorkspace() {
         onClose={() => setIsScannerOpen(false)}
         websiteUrl={activeAudit.websiteUrl}
         onApplyFindings={handleApplyScannerFindings}
+      />
+
+      <AIAnalysisModal
+        isOpen={isAIAnalysisOpen}
+        onClose={() => setIsAIAnalysisOpen(false)}
+        audit={activeAudit}
+        template={activeAuditTemplate}
+        onApplyResults={handleApplyAIResults}
       />
     </div>
   );
