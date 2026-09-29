@@ -35,6 +35,40 @@ export function AppProvider({ children }) {
   const [wizardPreselectedClient, setWizardPreselectedClient] = useState(null);
   const [toast, setToast] = useState(null);
 
+  // Logical Experience Separation: Client Portal (default) vs Admin Workspace
+  const [isAdminMode, setIsAdminMode] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('admin') === 'true' || window.location.hash === '#admin') {
+        return true;
+      }
+      return sessionStorage.getItem('fas_admin_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const enterAdminMode = useCallback(() => {
+    setIsAdminMode(true);
+    try {
+      sessionStorage.setItem('fas_admin_mode', 'true');
+    } catch (e) {
+      console.warn(e);
+    }
+  }, []);
+
+  const exitAdminMode = useCallback(() => {
+    setIsAdminMode(false);
+    try {
+      sessionStorage.removeItem('fas_admin_mode');
+    } catch (e) {
+      console.warn(e);
+    }
+    if (window.location.search.includes('admin') || window.location.hash.includes('admin')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   // Clients State
   const [clients, setClients] = useState(() => {
     try {
@@ -306,8 +340,18 @@ export function AppProvider({ children }) {
     ? (templates.find(t => t.id === activeAudit.auditTypeId) || templates[0]) 
     : null;
 
+  // Record completed self-service audit to internal repository for business owner visibility
+  const recordSelfServiceAudit = useCallback((auditPayload) => {
+    setAudits(prev => {
+      if (prev.some(a => a.id === auditPayload.id)) {
+        return prev.map(a => a.id === auditPayload.id ? { ...a, ...auditPayload } : a);
+      }
+      return [auditPayload, ...prev];
+    });
+  }, []);
+
   const value = {
-    // Nav
+    // Nav & Mode
     currentView,
     setCurrentView,
     navigateTo,
@@ -321,6 +365,10 @@ export function AppProvider({ children }) {
     wizardPreselectedClient,
     toast,
     showToast,
+    isAdminMode,
+    setIsAdminMode,
+    enterAdminMode,
+    exitAdminMode,
 
     // Entities
     clients,
@@ -342,7 +390,8 @@ export function AppProvider({ children }) {
     deleteAudit,
     updateTemplate,
     createTemplate,
-    resetToDemoData
+    resetToDemoData,
+    recordSelfServiceAudit
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -10,10 +10,11 @@ import {
   Compass, 
   ChevronRight,
   PlusCircle,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 
-export default function Sidebar({ mobileOpen, onCloseMobile }) {
+export default function Sidebar({ mobileOpen, onCloseMobile, onExitAdmin }) {
   const { currentView, navigateTo, openNewAuditWizard, branding, audits } = useApp();
 
   const navItems = [
@@ -65,7 +66,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           )}
         </div>
 
-        <div style={{ padding: '16px 14px 4px' }}>
+        <div style={{ padding: '16px 14px 4px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button 
             className="btn btn-primary" 
             style={{ width: '100%', justifyContent: 'center' }}
@@ -76,6 +77,19 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           >
             <PlusCircle size={17} />
             <span>Create New Audit</span>
+          </button>
+
+          <button 
+            className="btn btn-secondary btn-sm" 
+            style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+            onClick={() => {
+              if (onExitAdmin) onExitAdmin();
+              if (onCloseMobile) onCloseMobile();
+            }}
+            title="Switch to public self-service visitor portal"
+          >
+            <Eye size={15} />
+            <span>View Client Portal</span>
           </button>
         </div>
 

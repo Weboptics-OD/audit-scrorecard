@@ -1,8 +1,6 @@
-import React from 'react';
-import { useApp } from '../context/AppContext';
-import { Menu, Plus, FileText, ChevronRight } from 'lucide-react';
+import { Menu, Plus, FileText, ChevronRight, Eye } from 'lucide-react';
 
-export default function Header({ onToggleMobile }) {
+export default function Header({ onToggleMobile, onExitAdmin }) {
   const { currentView, activeAudit, openNewAuditWizard, navigateTo } = useApp();
 
   const getTitleAndBreadcrumb = () => {
@@ -63,6 +61,17 @@ export default function Header({ onToggleMobile }) {
       </div>
 
       <div className="header-actions">
+        {onExitAdmin && (
+          <button 
+            className="btn btn-ghost btn-sm"
+            onClick={onExitAdmin}
+            title="Switch back to visitor self-service portal"
+          >
+            <Eye size={15} />
+            <span className="hide-on-mobile">Client Portal</span>
+          </button>
+        )}
+
         {currentView === 'audit-workspace' && activeAudit && (
           <button 
             className="btn btn-secondary btn-sm"

@@ -11,13 +11,54 @@ import ReportPreviewView from './components/Reports/ReportPreviewView';
 import TemplatesView from './components/Templates/TemplatesView';
 import SettingsView from './components/Settings/SettingsView';
 import AuditWizardModal from './components/Audits/AuditWizardModal';
-import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import ClientPortalView from './components/ClientPortal/ClientPortalView';
+import { CheckCircle2, AlertTriangle, Eye, ShieldAlert } from 'lucide-react';
 
 export default function App() {
-  const { currentView, toast } = useApp();
+  const { 
+    currentView, 
+    toast, 
+    isAdminMode, 
+    enterAdminMode, 
+    exitAdminMode, 
+    templates, 
+    branding, 
+    recordSelfServiceAudit, 
+    showToast 
+  } = useApp();
+
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Dynamic View Switcher
+  // 1. SELF-SERVICE CLIENT PORTAL (Default Experience for Normal Visitors)
+  if (!isAdminMode) {
+    return (
+      <div className="client-app-wrapper">
+        <ClientPortalView 
+          templates={templates}
+          branding={branding}
+          onSaveToInternalRepo={recordSelfServiceAudit}
+          onSwitchToAdmin={enterAdminMode}
+          showToast={showToast}
+        />
+
+        {/* Notification Toast */}
+        {toast && (
+          <div className="toast-container no-print">
+            <div className={`toast toast-${toast.type || 'success'}`}>
+              {toast.type === 'error' ? (
+                <AlertTriangle size={18} color="var(--red)" />
+              ) : (
+                <CheckCircle2 size={18} color="var(--emerald)" />
+              )}
+              <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{toast.message}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2. ADMINISTRATIVE WORKSPACE (Internal Business Owner Area)
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
@@ -42,16 +83,36 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container admin-active">
+      {/* Admin Mode Floating Switcher / Notice */}
+      <div className="admin-status-banner no-print">
+        <div className="banner-left">
+          <ShieldAlert size={15} />
+          <span>Administrator Workspace Active • All historical audits & client accounts accessible</span>
+        </div>
+        <button 
+          className="btn btn-ghost btn-sm"
+          onClick={exitAdminMode}
+          title="Return to public client self-service portal"
+        >
+          <Eye size={14} />
+          <span>Exit to Client Portal</span>
+        </button>
+      </div>
+
       {/* Sidebar Navigation */}
       <Sidebar 
         mobileOpen={mobileSidebarOpen} 
         onCloseMobile={() => setMobileSidebarOpen(false)} 
+        onExitAdmin={exitAdminMode}
       />
 
       {/* Main Content Area */}
       <div className="main-content">
-        <Header onToggleMobile={() => setMobileSidebarOpen(!mobileSidebarOpen)} />
+        <Header 
+          onToggleMobile={() => setMobileSidebarOpen(!mobileSidebarOpen)} 
+          onExitAdmin={exitAdminMode}
+        />
 
         <main className="content-body">
           {renderCurrentView()}
