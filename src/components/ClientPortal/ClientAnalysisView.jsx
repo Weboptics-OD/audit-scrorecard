@@ -61,7 +61,17 @@ export default function ClientAnalysisView({
             </div>
             <h3>Analysis Notice</h3>
             <p className="error-description">
-              {error}
+              {(() => {
+                if (typeof error === 'string') {
+                  try {
+                    const parsed = JSON.parse(error);
+                    return parsed.error?.message || parsed.error || parsed.message || error;
+                  } catch {
+                    return error;
+                  }
+                }
+                return error?.message || 'We could not complete the analysis for this website. Please try again.';
+              })()}
             </p>
             <div className="error-actions">
               <button className="btn btn-primary" onClick={onRetry}>

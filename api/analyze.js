@@ -231,10 +231,13 @@ ${allCriteria.map((c, i) => `${i + 1}. ID: "${c.id}" | Cat: "${c.categoryName}" 
 
 Only output the raw JSON array.`;
 
+    const PRIMARY_MODEL = 'gemini-3.8-flash';
+    const FALLBACK_MODEL = 'gemini-2.5-flash';
+
     let rawText = '';
     try {
       const aiRes = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: PRIMARY_MODEL,
         contents: prompt,
         config: {
           systemInstruction,
@@ -243,17 +246,35 @@ Only output the raw JSON array.`;
         }
       });
       rawText = aiRes.text || '';
-    } catch {
-      // Fallback without urlContext tool if API environment has tool constraint
-      const fallbackRes = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json'
+    } catch (err1) {
+      console.warn('URL context with primary model failed, falling back:', err1?.message);
+      
+      try {
+        const fallbackRes = await ai.models.generateContent({
+          model: PRIMARY_MODEL,
+          contents: prompt,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json'
+          }
+        });
+        rawText = fallbackRes.text || '';
+      } catch (err2) {
+        console.warn('Standard primary model failed, trying fallback model:', err2?.message);
+        try {
+          const legacyRes = await ai.models.generateContent({
+            model: FALLBACK_MODEL,
+            contents: prompt,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json'
+            }
+          });
+          rawText = legacyRes.text || '';
+        } catch (err3) {
+          throw new Error(err2?.message || err3?.message || 'Gemini model analysis failed.');
         }
-      });
-      rawText = fallbackRes.text || '';
+      }
     }
 
     // Parse JSON
