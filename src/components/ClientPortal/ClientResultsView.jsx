@@ -210,7 +210,7 @@ export default function ClientResultsView({
               <div key={cat.categoryId} className="category-card card">
                 <div className="cat-card-header">
                   <div>
-                    <h4 className="cat-card-title">{cat.categoryName}</h4>
+                    <h4 className="cat-card-title">{cat.name || cat.categoryName}</h4>
                     <span className="cat-card-weight">{cat.weight}% of Total Score</span>
                   </div>
                   <span className={`badge ${badgeClass}`}>{label}</span>
@@ -231,7 +231,7 @@ export default function ClientResultsView({
                 </div>
 
                 <div className="cat-card-meta">
-                  <span>{cat.criteriaCount} criteria analyzed</span>
+                  <span>{cat.scoredCriteria ?? cat.criteriaCount ?? cat.totalCriteria} criteria analyzed</span>
                 </div>
               </div>
             );
