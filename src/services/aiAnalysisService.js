@@ -6,7 +6,7 @@
 import { GoogleGenAI } from '@google/genai';
 
 const MODEL = 'gemini-3.8-flash';
-const FALLBACK_MODEL = 'gemini-2.5-flash';
+const FALLBACK_MODEL = 'gemini-3.1-flash-lite';
 
 /**
  * Analyze a URL and score all criteria in a template using Gemini AI.
@@ -123,14 +123,27 @@ Be rigorous and specific. Only return the valid JSON array.`;
         });
         rawText = res.text || '';
       } catch (err3) {
-        // Re-throw with user-friendly error
-        if (err3.message?.includes('API_KEY') || err3.message?.includes('api key') || err3.status === 401 || err3.status === 403) {
-          throw new Error('Invalid Gemini API key. Please check your key at aistudio.google.com/apikey and update it in Settings.');
+        console.warn('Standard model failed, trying fast fallback model:', err3?.message);
+        try {
+          const res = await ai.models.generateContent({
+            model: FALLBACK_MODEL,
+            contents: prompt,
+            config: {
+              systemInstruction,
+              responseMimeType: 'application/json'
+            }
+          });
+          rawText = res.text || '';
+        } catch (err4) {
+          // Re-throw with user-friendly error
+          if (err4.message?.includes('API_KEY') || err4.message?.includes('api key') || err4.status === 401 || err4.status === 403) {
+            throw new Error('Invalid Gemini API key. Please check your key at aistudio.google.com/apikey and update it in Settings.');
+          }
+          if (err4.message?.includes('quota') || err4.status === 429) {
+            throw new Error('Gemini API quota exceeded. Please wait a moment or check your Google AI Studio plan.');
+          }
+          throw new Error(err4.message || 'Gemini analysis failed. Please check your connection and API key.');
         }
-        if (err3.message?.includes('quota') || err3.status === 429) {
-          throw new Error('Gemini API quota exceeded. Please wait a moment or check your Google AI Studio plan.');
-        }
-        throw new Error(err3.message || 'Gemini analysis failed. Please check your connection and API key.');
       }
     }
   }
