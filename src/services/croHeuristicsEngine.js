@@ -46,14 +46,17 @@ export function evaluateCriteriaFromSignals(allCriteria, siteSignals = {}, url =
       }
     }
 
-    // 2. Call to Action (CTA) & Buttons
+    // 2. Call to Action (CTA) & Buttons — normalise both signal shapes
+    // siteInspector.js uses: detectedCtas
+    // api/analyze.js inline parser uses: ctas
     if (name.includes('cta') || name.includes('call to action') || name.includes('action')) {
-      if (hasSignals && signals.detectedCtas?.length > 0) {
+      const ctas = signals.detectedCtas || signals.ctas || [];
+      if (hasSignals && ctas.length > 0) {
         responses[id] = {
           criterionId: id,
           categoryId: crit.categoryId,
           score: 4,
-          observation: `Prominent CTA detected: "${signals.detectedCtas.slice(0, 2).join(' / ')}". Action buttons are visible.`,
+          observation: `Prominent CTA detected: "${ctas.slice(0, 2).join(' / ')}". Action buttons are visible.`,
           recommendation: crit.defaultRecommendation || 'Test high-contrast button styling and first-person copy ("Get My Plan").',
           priority: 'Medium',
           unableToVerify: false,
@@ -104,14 +107,22 @@ export function evaluateCriteriaFromSignals(allCriteria, siteSignals = {}, url =
       }
     }
 
-    // 4. Forms & Lead Capture
-    if (name.includes('form') || name.includes('capture') || name.includes('lead') || name.includes('friction')) {
-      if (hasSignals && (signals.hasForms || signals.formDetails?.hasEmailCapture)) {
+    // 4. Forms & Lead Capture — normalise both signal shapes
+    // siteInspector.js uses: hasForms, formDetails.hasEmailCapture
+    // api/analyze.js inline parser uses: formsCount, hasEmailLeadCapture
+    if (name.includes('form') || name.includes('capture') || name.includes('lead') || name.includes('friction') || name.includes('opt-in')) {
+      const hasForms = signals.hasForms 
+        || signals.formDetails?.hasEmailCapture
+        || signals.formsCount > 0
+        || signals.hasEmailLeadCapture;
+      if (hasSignals && hasForms) {
+        const formCount = signals.formDetails?.formCount ?? signals.formsCount ?? 0;
+        const hasEmail = signals.formDetails?.hasEmailCapture || signals.hasEmailLeadCapture;
         responses[id] = {
           criterionId: id,
           categoryId: crit.categoryId,
           score: 4,
-          observation: `Lead capture input elements verified (${signals.formDetails?.hasEmailCapture ? 'Email input present' : 'Contact form present'}).`,
+          observation: `Lead capture form verified on page: ${formCount > 0 ? `${formCount} form(s) found` : 'form elements present'}${hasEmail ? ', email input field detected' : ''}.`,
           recommendation: crit.defaultRecommendation || 'Keep form fields to the minimum required to minimize conversion friction.',
           priority: 'Medium',
           unableToVerify: false,
@@ -122,10 +133,10 @@ export function evaluateCriteriaFromSignals(allCriteria, siteSignals = {}, url =
         responses[id] = {
           criterionId: id,
           categoryId: crit.categoryId,
-          score: 3,
-          observation: 'No inline lead capture forms detected. Conversion likely routes via external links or modal.',
-          recommendation: 'Consider embedding a streamlined 1-step email capture form directly above the fold.',
-          priority: 'Medium',
+          score: 2,
+          observation: 'No embedded lead capture form detected. Visitors have no clear inline conversion mechanism on this page.',
+          recommendation: 'Embed a streamlined 1-2 field email capture form directly above the fold or after the value proposition.',
+          priority: 'High',
           unableToVerify: false,
           updatedAt: new Date().toISOString()
         };

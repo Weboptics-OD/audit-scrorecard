@@ -334,22 +334,32 @@ Only output the raw JSON array.`;
             observation = 'No prominent H1 headline detected above the fold in standard elements.';
             priority = 'High';
           }
-        } else if (critName.includes('cta') || critName.includes('action')) {
-          if (siteSignals.ctas?.length > 0) {
+        } else if (critName.includes('form') || critName.includes('friction') || critName.includes('capture') || critName.includes('lead capture') || critName.includes('opt-in')) {
+          const hasForms = siteSignals.formsCount > 0 || siteSignals.hasEmailLeadCapture || siteSignals.hasForms || siteSignals.formDetails?.hasEmailCapture;
+          if (hasForms) {
             score = 4;
-            observation = `Call-to-action button detected: "${siteSignals.ctas.slice(0, 2).join(' / ')}".`;
+            observation = `Lead capture form verified: ${siteSignals.formsCount > 0 ? `${siteSignals.formsCount} form(s)` : ''} ${siteSignals.hasEmailLeadCapture || siteSignals.formDetails?.hasEmailCapture ? 'with email input field' : ''} detected on page.`.trim();
           } else {
             score = 2;
-            observation = 'No prominent primary call-to-action button detected above the fold.';
+            observation = 'No embedded lead capture form detected. Visitors have no clear inline conversion mechanism.';
             priority = 'High';
           }
-        } else if (critName.includes('trust') || critName.includes('testimonial') || critName.includes('proof')) {
-          if (siteSignals.hasTestimonials) {
+        } else if (critName.includes('faq') || critName.includes('objection')) {
+          if (siteSignals.hasFaq) {
             score = 4;
-            observation = 'Social proof and testimonial elements detected on the page.';
+            observation = 'FAQ or objection-handling section detected on the page.';
           } else {
             score = 2;
-            observation = 'No customer testimonials or review elements detected in main page text.';
+            observation = 'No FAQ or structured objection-handling section detected.';
+            priority = 'Medium';
+          }
+        } else if (critName.includes('analytics') || critName.includes('tracking') || critName.includes('pixel')) {
+          if (siteSignals.hasAnalytics) {
+            score = 4;
+            observation = 'Analytics / tracking scripts detected on the page.';
+          } else {
+            score = 2;
+            observation = 'No analytics or conversion tracking detected. Cannot measure performance.';
             priority = 'High';
           }
         } else if (critName.includes('mobile') || critName.includes('responsive')) {
