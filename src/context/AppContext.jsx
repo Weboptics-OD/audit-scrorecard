@@ -11,6 +11,21 @@ const STORAGE_KEYS = {
   BRANDING: 'fas_branding_v1'
 };
 
+// Sanitize stored audits: ensure all scores are numbers (fixes localStorage type corruption)
+function sanitizeAudits(auditList) {
+  return auditList.map(audit => {
+    if (!audit.responses) return audit;
+    const cleanResponses = {};
+    Object.entries(audit.responses).forEach(([critId, resp]) => {
+      cleanResponses[critId] = {
+        ...resp,
+        ...(resp.score !== undefined ? { score: Number(resp.score) } : {})
+      };
+    });
+    return { ...audit, responses: cleanResponses };
+  });
+}
+
 export function AppProvider({ children }) {
   // Navigation & Active States
   const [currentView, setCurrentView] = useState('dashboard');
@@ -40,11 +55,12 @@ export function AppProvider({ children }) {
     }
   });
 
+
   // Audits State
   const [audits, setAudits] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.AUDITS);
-      return stored ? JSON.parse(stored) : INITIAL_AUDITS;
+      return stored ? sanitizeAudits(JSON.parse(stored)) : INITIAL_AUDITS;
     } catch {
       return INITIAL_AUDITS;
     }
@@ -203,6 +219,8 @@ export function AppProvider({ children }) {
           [criterionId]: {
             ...(existingResponses[criterionId] || {}),
             ...responseData,
+            // Always store score as a number to prevent type mismatch bugs
+            ...(responseData.score !== undefined ? { score: Number(responseData.score) } : {}),
             updatedAt: new Date().toISOString()
           }
         };

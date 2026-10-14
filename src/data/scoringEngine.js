@@ -100,8 +100,9 @@ export function calculateAuditScores(template, responses = {}) {
 
     criteria.forEach(crit => {
       const resp = responses[crit.id];
-      if (resp && typeof resp.score === 'number' && resp.score >= 1) {
-        scoredSum += resp.score;
+      const scoreNum = resp ? Number(resp.score) : NaN;
+      if (resp && !isNaN(scoreNum) && scoreNum >= 1 && scoreNum <= 5) {
+        scoredSum += scoreNum;
         scoredCount++;
         completedCriteriaCount++;
       }
